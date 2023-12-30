@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  pokemon_app:
+    container_name: pokemon_app
+    build: .
+    ports:
+      - "80:${PORT_APP}" #LOCAL NPM
+    environment:
+      - PORT_APP=${PORT_APP} 
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=pokemon_db
+      - DB_PORT=${DB_PORT}
+
+    depends_on:
+      pokemon_db:
+        condition: service_healthy
+    networks:
+      pokemon_network:
+      # proxy_network: #REMOTE
+      #   ipv4_address: ${IPV4} #REMOTE
+
+  pokemon_db:
+    container_name: pokemon_db
+    image: postgres:16.1-bullseye
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    networks:
+      pokemon_network:
+
+networks:
+  pokemon_network:
+  # proxy_network: #REMOTE
+  #   name: nginx_proxy_network #REMOTE
+  #   external: true #REMOTE
+
